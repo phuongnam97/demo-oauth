@@ -34,6 +34,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
             .secret(passwordEncoder.encode("secret"))
             .accessTokenValiditySeconds(600)
             .refreshTokenValiditySeconds(600);
+
     }
 
     @Override
