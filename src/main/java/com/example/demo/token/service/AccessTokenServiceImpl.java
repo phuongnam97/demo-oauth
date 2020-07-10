@@ -1,11 +1,14 @@
 package com.example.demo.token.service;
 
-import com.example.demo.token.AccessToken;
-import com.example.demo.token.db.AccessTokenDAO;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+
+import com.example.demo.token.AccessToken;
+import com.example.demo.token.db.AccessTokenDAO;
+import com.example.demo.token.filter.AccessTokenByAuthenticationIdFilter;
+import com.example.demo.token.filter.AccessTokenByClientIdAndUsernameFilter;
+import com.example.demo.token.filter.AccessTokenByTokenIdFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;
@@ -14,13 +17,50 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.AuthenticationKeyGenerator;
 import org.springframework.security.oauth2.provider.token.DefaultAuthenticationKeyGenerator;
 import org.springframework.stereotype.Service;
+import vn.com.itechcorp.base.repository.dao.AuditableDAO;
+import vn.com.itechcorp.base.repository.service.AuditableGeneratedIDServiceImpl;
 
 @Service
-public class AccessTokenServiceImpl implements AccessTokenService{
+public class AccessTokenServiceImpl extends AuditableGeneratedIDServiceImpl<AccessToken> implements AccessTokenService {
     @Autowired
     private AccessTokenDAO accessTokenDAO;
 
     private AuthenticationKeyGenerator authenticationKeyGenerator = new DefaultAuthenticationKeyGenerator();
+
+    @Override
+    public AuditableDAO<AccessToken, Long> getDAO() {
+        return this.accessTokenDAO;
+    }
+
+    @Override
+    public boolean cloneUpdatableProperties(AccessToken from, AccessToken to) {
+        boolean modified = false;
+        if (from.getTokenId() != null) {
+            to.setTokenId(from.getTokenId());
+            modified = true;
+        }
+        if (from.getToken() != null) {
+            to.setToken(from.getToken());
+            modified = true;
+        }
+        if (from.getAuthenticationId() != null) {
+            to.setAuthenticationId(from.getAuthenticationId());
+            modified = true;
+        }
+        if (from.getAuthentication() != null) {
+            to.setAuthentication(from.getAuthentication());
+            modified = true;
+        }
+        if (from.getClientId() != null) {
+            to.setClientId(from.getClientId());
+            modified = true;
+        }
+        if (from.getUsername() != null) {
+            to.setUsername(from.getUsername());
+            modified = true;
+        }
+        return modified;
+    }
 
     @Override
     public OAuth2Authentication readAuthentication(OAuth2AccessToken oAuth2AccessToken) {
@@ -29,9 +69,11 @@ public class AccessTokenServiceImpl implements AccessTokenService{
 
     @Override
     public OAuth2Authentication readAuthentication(String tokenId) {
-        Optional<AccessToken> query = accessTokenDAO.findByTokenId(tokenId);
-        if (query.isPresent()){
-            return query.get().getAuthentication();
+        AccessTokenByTokenIdFilter filter = new AccessTokenByTokenIdFilter(tokenId);
+        List<AccessToken> query = accessTokenDAO.getPageOfData(filter, null);
+
+        if (query != null && query.size() > 0) {
+            return query.get(0).getAuthentication();
         }
         return null;
     }
@@ -41,7 +83,9 @@ public class AccessTokenServiceImpl implements AccessTokenService{
         if (this.readAccessToken(oAuth2AccessToken.getValue()) != null) {
             this.removeAccessToken(oAuth2AccessToken);
         }
-        if (accessTokenDAO.findByClientIdAndUsername(oAuth2Authentication.getOAuth2Request().getClientId(), oAuth2Authentication.getName()).isEmpty()) {
+        AccessTokenByClientIdAndUsernameFilter filter =
+            new AccessTokenByClientIdAndUsernameFilter(oAuth2Authentication.getOAuth2Request().getClientId(), oAuth2Authentication.getName());
+        if (accessTokenDAO.getCountAll(filter) == 0) {
             AccessToken accessToken = new AccessToken();
             accessToken.setTokenId(oAuth2AccessToken.getValue());
             accessToken.setToken(serializeAccessToken(oAuth2AccessToken));
@@ -49,24 +93,26 @@ public class AccessTokenServiceImpl implements AccessTokenService{
             accessToken.setUsername(oAuth2Authentication.isClientOnly() ? null : oAuth2Authentication.getName());
             accessToken.setAuthentication(oAuth2Authentication);
             accessToken.setAuthenticationId(authenticationKeyGenerator.extractKey(oAuth2Authentication));
-            accessTokenDAO.save(accessToken);
+            accessTokenDAO.create(accessToken, 0L);
         }
     }
 
     @Override
     public OAuth2AccessToken readAccessToken(String tokenId) {
-        Optional<AccessToken> query = accessTokenDAO.findByTokenId(tokenId);
-        if (query.isPresent()){
-            return deserializeAccessToken(query.get().getToken());
+        AccessTokenByTokenIdFilter filter = new AccessTokenByTokenIdFilter(tokenId);
+        List<AccessToken> query = accessTokenDAO.getPageOfData(filter, null);
+        if (query != null && query.size() > 0) {
+            return deserializeAccessToken(query.get(0).getToken());
         }
         return null;
     }
 
     @Override
     public void removeAccessToken(OAuth2AccessToken oAuth2AccessToken) {
-        Optional<AccessToken> query =accessTokenDAO.findByTokenId(oAuth2AccessToken.getValue());
-        if (query.isPresent()){
-            accessTokenDAO.delete(query.get());
+        AccessTokenByTokenIdFilter filter = new AccessTokenByTokenIdFilter(oAuth2AccessToken.getValue());
+        List<AccessToken> query = accessTokenDAO.getPageOfData(filter, null);
+        if (query != null && query.size() > 0) {
+            accessTokenDAO.delete(query.get(0), 0L);
         }
     }
 
@@ -97,18 +143,20 @@ public class AccessTokenServiceImpl implements AccessTokenService{
 
     @Override
     public OAuth2AccessToken getAccessToken(OAuth2Authentication oAuth2Authentication) {
-        Optional<AccessToken> query = accessTokenDAO.findByAuthenticationId(authenticationKeyGenerator.extractKey(oAuth2Authentication));
-        if (query.isPresent()){
-            return deserializeAccessToken(query.get().getToken());
+        AccessTokenByAuthenticationIdFilter filter = new AccessTokenByAuthenticationIdFilter(authenticationKeyGenerator.extractKey(oAuth2Authentication));
+        List<AccessToken> query = accessTokenDAO.getPageOfData(filter, null);
+        if (query != null && query.size() > 0) {
+            return deserializeAccessToken(query.get(0).getToken());
         }
         return null;
     }
 
     @Override
     public Collection<OAuth2AccessToken> findTokensByClientIdAndUserName(String clientId, String username) {
-        List<AccessToken> accessTokenList = accessTokenDAO.findByClientIdAndUsername(clientId, username);
+        AccessTokenByClientIdAndUsernameFilter filter = new AccessTokenByClientIdAndUsernameFilter(clientId, username);
+        List<AccessToken> accessTokenList = accessTokenDAO.getPageOfData(filter, null);
         Collection<OAuth2AccessToken> oAuth2AccessTokens = new ArrayList<>();
-        for (AccessToken item : accessTokenList){
+        for (AccessToken item : accessTokenList) {
             oAuth2AccessTokens.add(deserializeAccessToken(item.getToken()));
         }
         return oAuth2AccessTokens;
@@ -116,19 +164,22 @@ public class AccessTokenServiceImpl implements AccessTokenService{
 
     @Override
     public Collection<OAuth2AccessToken> findTokensByClientId(String clientId) {
-        List<AccessToken> accessTokenList = accessTokenDAO.findByClientId(clientId);
+        AccessTokenByClientIdAndUsernameFilter filter = new AccessTokenByClientIdAndUsernameFilter(clientId, null);
+        List<AccessToken> accessTokenList = accessTokenDAO.getPageOfData(filter, null);
         Collection<OAuth2AccessToken> oAuth2AccessTokens = new ArrayList<>();
-        for (AccessToken item : accessTokenList){
+        for (AccessToken item : accessTokenList) {
             oAuth2AccessTokens.add(deserializeAccessToken(item.getToken()));
         }
         return oAuth2AccessTokens;
     }
 
-    public byte[] serializeAccessToken(OAuth2AccessToken accessToken){
+    public byte[] serializeAccessToken(OAuth2AccessToken accessToken) {
         return SerializationUtils.serialize(accessToken);
     }
 
-    public OAuth2AccessToken deserializeAccessToken(byte[] accessToken){
+    public OAuth2AccessToken deserializeAccessToken(byte[] accessToken) {
         return SerializationUtils.deserialize(accessToken);
     }
+
+
 }

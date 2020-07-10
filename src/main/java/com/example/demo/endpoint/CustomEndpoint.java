@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
 import org.springframework.security.oauth2.provider.endpoint.CheckTokenEndpoint;
 import org.springframework.security.oauth2.provider.endpoint.TokenEndpoint;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,21 +31,27 @@ public class CustomEndpoint {
     private CheckTokenEndpoint checkTokenEndpoint;
 
     @PostMapping("/get-token")
-    public ResponseEntity<?> getCustomToken(Principal principal, @RequestParam Map<String, String> parameters) throws Exception{
+    public ResponseEntity<?> getCustomToken(Principal principal, @RequestParam Map<String, String> parameters) throws Exception {
         tokenEndpoint.setAllowedRequestMethods(new HashSet(Arrays.asList(HttpMethod.POST, HttpMethod.GET)));
         Authentication client = (Authentication) principal;
-        logger.info("Client [" + client.getName() +"] send an get-token request with user ["+ parameters.get("username") + "]");
+        logger.info("Client [" + client.getName() + "] send a get-token request with user [" + parameters.get("username") + "]");
         ResponseEntity resp = tokenEndpoint.getAccessToken(principal, parameters);
         HttpHeaders newHeader = HttpHeaders.writableHttpHeaders(resp.getHeaders());
         newHeader.add("Client-id", client.getName());
         newHeader.add("Server", "Authorization Server");
+        logger.info("Client [" + client.getName() + "] received token: " + resp.getBody().toString());
         return new ResponseEntity<>(resp.getBody(), newHeader, HttpStatus.OK);
     }
 
     @RequestMapping("/check-token")
-    public Map<String, ?> checkToken(@RequestParam("token") String value, Principal principal){
+    public Map<String, ?> checkToken(@RequestParam("token") String value, Principal principal) {
 
-        logger.info("Client [" + principal.getName()+ "] check token on the resource server");
-        return checkTokenEndpoint.checkToken(value);
+        logger.info("Client [" + principal.getName() + "] check token [" + value + "] on the resource server");
+        try {
+            return checkTokenEndpoint.checkToken(value);
+        } catch (InvalidTokenException ex){
+            logger.error(ex.getMessage());
+            return null;
+        }
     }
 }

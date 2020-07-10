@@ -1,19 +1,12 @@
 package com.example.demo.user.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+
+import vn.com.itechcorp.base.repository.model.AuditableGeneratedIDEntry;
 
 @Entity
 @Table(name = "roles")
-public class Role {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+public class Role extends AuditableGeneratedIDEntry {
 
     @Column(name = "name")
     private String name;
@@ -23,14 +16,6 @@ public class Role {
 
     public Role(String name){
         this.name = name;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public String getName() {

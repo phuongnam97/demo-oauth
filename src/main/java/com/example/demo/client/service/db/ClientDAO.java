@@ -1,9 +1,7 @@
 package com.example.demo.client.service.db;
 
 import com.example.demo.client.model.Client;
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
+import vn.com.itechcorp.base.repository.dao.AuditableDAO;
 
-public interface ClientDAO extends JpaRepository<Client, String> {
-     Optional<Client> findById(String id);
+public interface ClientDAO extends AuditableDAO<Client, String> {
 }

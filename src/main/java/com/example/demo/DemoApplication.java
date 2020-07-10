@@ -1,15 +1,13 @@
 package com.example.demo;
 
-import com.example.demo.user.model.Role;
-import com.example.demo.user.model.User;
-import com.example.demo.user.service.db.UserDAO;
-import java.util.Arrays;
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.orm.hibernate5.HibernateTransactionManager;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 
 @SpringBootApplication
 public class DemoApplication {
@@ -19,17 +17,20 @@ public class DemoApplication {
     }
 
     @Autowired
-    private UserDetailsService appUserDetailsService;
+    protected DataSource dataSource;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    @Bean
+    public LocalSessionFactoryBean sessionFactory() {
+        LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+        sessionFactory.setDataSource(dataSource);
+        sessionFactory.setPackagesToScan(new String[]{"com.example.demo"});
+        return sessionFactory;
+    }
 
-    @Autowired
-    public void authenticationManager(AuthenticationManagerBuilder builder, UserDAO userDAO) throws Exception {
-        if (userDAO.count() == 0) {
-            userDAO.save(new User("user", passwordEncoder.encode("password"), Arrays.asList(new Role("USER"), new Role("ACTUATOR"))));
-            userDAO.save(new User("admin", passwordEncoder.encode("password"), Arrays.asList(new Role("ADMIN"))));
-        }
-        builder.userDetailsService(appUserDetailsService);
+    @Bean
+    public HibernateTransactionManager transactionManager() {
+        HibernateTransactionManager transactionManager = new HibernateTransactionManager();
+        transactionManager.setSessionFactory(sessionFactory().getObject());
+        return transactionManager;
     }
 }

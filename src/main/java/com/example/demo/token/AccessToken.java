@@ -1,37 +1,32 @@
 package com.example.demo.token;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+
 import org.springframework.security.oauth2.common.util.SerializationUtils;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import vn.com.itechcorp.base.repository.model.AuditableGeneratedIDEntry;
 
 @Entity
-public class AccessToken {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+@Table(name = "access_token")
+public class AccessToken extends AuditableGeneratedIDEntry {
 
+    @Column(name = "token_id")
     private String tokenId;
 
+    @Column(name = "token")
     private byte[] token;
 
+    @Column(name = "client_id")
     private String clientId;
 
+    @Column(name = "username")
     private String username;
 
+    @Column(name = "authentication")
     private byte[] authentication;
 
+    @Column(name = "authentication_id")
     private String authenticationId;
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public String getTokenId() {
         return tokenId;

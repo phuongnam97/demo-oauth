@@ -1,24 +1,15 @@
 package com.example.demo.client.model;
 
+import javax.persistence.*;
 import java.util.Set;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.Table;
+
 import lombok.AllArgsConstructor;
+import vn.com.itechcorp.base.repository.model.AuditableDbEntry;
 
 @Entity
 @Table(name = "clients")
 @AllArgsConstructor
-public class Client {
-    @Id
-    @Column(name = "id")
-    private String id;
+public class Client extends AuditableDbEntry<String> {
 
     @Column(name = "secret")
     private String secret;
@@ -41,18 +32,10 @@ public class Client {
     @Column(name = "access_token_validity_seconds")
     private int accessTokenValiditySeconds;
 
-    @Column(name = "reset_token_validity_seconds")
+    @Column(name = "refresh_token_validity_seconds")
     private int refreshTokenValiditySeconds;
 
     public Client() {
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getSecret() {
@@ -63,11 +46,11 @@ public class Client {
         this.secret = secret;
     }
 
-    public Set<Resource> getResourceIds() {
+    public Set<Resource> getResources() {
         return resources;
     }
 
-    public void setResourceIds(Set<Resource> resourceIds) {
+    public void setResources(Set<Resource> resourceIds) {
         this.resources = resourceIds;
     }
 

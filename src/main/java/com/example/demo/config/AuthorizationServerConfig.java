@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.oauth.AppClientDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +25,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Autowired
     private TokenStore tokenStore;
 
+    @Autowired
+    private AppClientDetailsService appClientDetailsService;
+
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
         security.checkTokenAccess("isAuthenticated()").passwordEncoder(passwordEncoder);
@@ -31,21 +35,13 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.inMemory().withClient("my-trusted-client")
-            .authorizedGrantTypes("password", "client_credentials", "authorization_code", "refresh_token")
-            .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
-            .scopes("read", "write", "trust")
-            .resourceIds("oauth2-resource")
-            .redirectUris("http://localhost:8080/test")
-            .secret(passwordEncoder.encode("secret"))
-            .accessTokenValiditySeconds(600)
-            .refreshTokenValiditySeconds(600);
+        clients.withClientDetails(appClientDetailsService);
     }
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-        endpoints.authenticationManager(authenticationManager).tokenStore(tokenStore);
-        endpoints.pathMapping("/oauth/token", "/get-token")
-        .pathMapping("/oauth/check_token","/check-token");
+        endpoints.authenticationManager(authenticationManager).tokenStore(tokenStore)
+            .pathMapping("/oauth/token", "/get-token")
+            .pathMapping("/oauth/check_token","/check-token");
     }
 }

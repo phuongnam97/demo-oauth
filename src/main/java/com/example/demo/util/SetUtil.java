@@ -5,6 +5,9 @@ import java.util.Set;
 
 public class SetUtil {
     public static Set<String> convertStringToSet(String s){
+        if (s == null || s.isEmpty()){
+            return null;
+        }
         String[] strings = s.split(",");
         Set<String> stringSet = new HashSet<>();
         for (String string : strings) {

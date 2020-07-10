@@ -1,32 +1,21 @@
 package com.example.demo.client.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.Set;
+
+import vn.com.itechcorp.base.repository.model.AuditableGeneratedIDEntry;
 
 @Entity
 @Table(name = "resources")
-public class Resource {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+public class Resource extends AuditableGeneratedIDEntry {
 
     @Column(name = "description")
     private String description;
 
+    @ManyToMany(mappedBy = "resources")
+    private Set<Client> clients;
+
     public Resource() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getDescription() {
@@ -35,5 +24,13 @@ public class Resource {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Set<Client> getClients() {
+        return clients;
+    }
+
+    public void setClients(Set<Client> clients) {
+        this.clients = clients;
     }
 }

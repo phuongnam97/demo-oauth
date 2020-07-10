@@ -1,6 +1,7 @@
 package com.example.demo.oauth;
 
 import com.example.demo.user.service.db.UserDAO;
+import com.example.demo.user.service.filter.UserByUsernameFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,6 +15,10 @@ public class AppUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return new AppUserDetails(userDAO.findByUsername(username));
+        UserByUsernameFilter filter = new UserByUsernameFilter(username);
+        if (userDAO.getCountAll(filter) > 0 ){
+            return new AppUserDetails(userDAO.getPageOfData(filter, null).get(0));
+        }
+        return null;
     }
 }
